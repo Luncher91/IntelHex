@@ -2,7 +2,8 @@ package net.alenzen.intelHex;
 
 public enum TestFile {
 	A("validFile.hex"),
-	B("extensionGap.hex");
+	B("extensionGap.hex"),
+	C("extensionMiddleLeftChunk.hex");
 
 	private String filename;
 
