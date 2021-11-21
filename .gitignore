@@ -26,3 +26,8 @@ hs_err_pid*
 target/
 
 .DS_Store
+# ignore eclipse files
+.project
+.classpath
+.settings
+.metadata
