@@ -220,7 +220,7 @@ public class IntelHexFile {
 		assert lower == null || !lower.containsAddress(address);
 		assert upper == null || !upper.containsAddress(address);
 
-		long gapSize = determineGapSize(lower, upper);
+		long gapSize = determineGapSize(address, lower, upper);
 
 		int writtenBytes = 0;
 		// length should not be larger than the remaining bytes
@@ -235,7 +235,7 @@ public class IntelHexFile {
 			offset += bytesWritten;
 
 			lower = newLine;
-			gapSize = determineGapSize(lower, upper);
+			gapSize = determineGapSize(address + writtenBytes, lower, upper);
 			length = (int) Math.min(bs.length - offset, gapSize);
 			numberOfLines = determineNumberOfLines(length);
 		}
@@ -316,13 +316,14 @@ public class IntelHexFile {
 	 * Determines the gap size between lower and upper. If lower is null the size is
 	 * equal to the full start address of upper. If upper is null the gap size is
 	 * equal to Long.MAX_VALUE.
+	 * @param address address where to start writing
 	 * 
 	 * @param lower
 	 * @param upper
-	 * @return Number of bytes between lower and upper. -1 in case lower and upper
+	 * @return Number of bytes between Math.max(lower, address) and upper. -1 in case lower and upper
 	 *         are null.
 	 */
-	private long determineGapSize(HexFileLine lower, HexFileLine upper) {
+	private long determineGapSize(long address, HexFileLine lower, HexFileLine upper) {
 		long realSize = 0;
 
 		if (upper == null && lower == null) {
@@ -332,13 +333,16 @@ public class IntelHexFile {
 		if (lower == null) {
 			realSize = upper.getFullStartAddress();
 		}
+		
+		long lowerEndAddress = lower.getFullStartAddress() + lower.getLength();
+		lowerEndAddress = Math.max(lowerEndAddress, address);
 
 		if (upper == null) {
 			realSize = Long.MAX_VALUE;
 		}
 
 		if (lower != null && upper != null) {
-			realSize = upper.getFullStartAddress() - lower.getFullStartAddress() - lower.getLength();
+			realSize = upper.getFullStartAddress() - lowerEndAddress;
 		}
 
 		return realSize;
