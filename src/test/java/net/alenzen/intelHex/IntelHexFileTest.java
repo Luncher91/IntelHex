@@ -267,8 +267,41 @@ public class IntelHexFileTest {
 		assertEquals(8, f.findLineByAddress(0x00020008).get().getData().length);
 	}
 
+	@Test
+	public void testSetDataAccrossExistingRightChunk() throws IOException, InvalidFormatException {
+		IntelHexFile f = getTestFile(TestFile.D);
+		byte[] originalBytes0001 = f.readBytes(0x0001FF08, 40);
+		byte[] originalBytes0003 = f.readBytes(0x00040000, 40);
+
+		int originalNumberOfRecords = f.getRecords().size();
+		int originalNumberOfDataLines = (int) f.getRecords().stream().filter(l -> l.getType() == RecordType.DATA)
+				.count();
+
+		// update hexfile with random data
+		int newDataBytes = 24;
+		byte[] bs = generateRandomBytes(newDataBytes);
+		f.updateBytes(0x0002FFF0, bs);
+
+		int numberOfExtensionLines = (int) f.getRecords().stream()
+				.filter(l -> l.getType() == RecordType.EXTENDED_LINEAR_ADDRESS).count();
+		assertEquals(4, numberOfExtensionLines);
+
+		int numberOfDataLines = (int) f.getRecords().stream().filter(l -> l.getType() == RecordType.DATA)
+				.count();
+		assertEquals(originalNumberOfRecords + 2, f.getRecords().size());
+		assertEquals(originalNumberOfDataLines + 2, numberOfDataLines);
+		
+		byte[] bytes0001 = f.readBytes(0x0001FF08, 40);
+		byte[] writtenChunk = f.readBytes(0x0002FFF0, newDataBytes);
+		byte[] bytes0003 = f.readBytes(0x00040000, 40);
+		assertArrayEquals(originalBytes0001, bytes0001);
+		assertArrayEquals(originalBytes0003, bytes0003);
+		assertArrayEquals(bs, writtenChunk);
+		
+		assertEquals(8, f.findLineByAddress(0x0002FFF0).get().getData().length);
+		assertEquals(8, f.findLineByAddress(0x0002FFF8).get().getData().length);
+		assertEquals(8, f.findLineByAddress(0x00030000).get().getData().length);
+	}
 	// TODO more tests for updates with address extensions
-	// set data across an existing chunk (A: chunk is at the beginning of the
-	// extension; B: chunk is at the end of an extension)
 	// run tests for EXTENDED_SEGMENT_ADDRESS as well (ParameterizedTest?)
 }
