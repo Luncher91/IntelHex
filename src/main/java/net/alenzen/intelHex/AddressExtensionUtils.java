@@ -15,13 +15,16 @@ public class AddressExtensionUtils {
 		throw new InvalidParameterException("RecordType is not a valid address extension type!");
 	}
 	
-	public static long extensionOffsetFromFullAddress(RecordType type, long fullAddress) {
+	public static int extensionOffsetFromFullAddress(RecordType type, long fullAddress) {
 		if (type == RecordType.EXTENDED_LINEAR_ADDRESS) {
-			return fullAddress >> 16;
+			assert fullAddress > 0;
+			assert fullAddress <= 0xFFFFFFFFL;
+			return (int) (fullAddress >> 16);
 		}
 
 		if (type == RecordType.EXTENDED_SEGMENT_ADDRESS) {
-			return fullAddress / 16;
+			assert fullAddress / 16 <= 0xFFFFFFFFL;
+			return (int) (fullAddress / 16);
 		}
 		
 		throw new InvalidParameterException("RecordType is not a valid address extension type!");

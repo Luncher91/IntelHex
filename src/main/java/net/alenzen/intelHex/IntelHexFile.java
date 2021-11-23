@@ -229,7 +229,7 @@ public class IntelHexFile {
 		long numberOfLines = determineNumberOfLines(length);
 
 		for (int i = 0; i < numberOfLines; i++) {
-			HexFileLine newLine = createAndInsertNewLine(lower, address + writtenBytes, bs, offset, length);
+			HexFileLine newLine = createAndInsertNewLine(lower, upper, address + writtenBytes, bs, offset, length);
 			int bytesWritten = newLine.getLength();
 			writtenBytes += bytesWritten;
 			offset += bytesWritten;
@@ -245,7 +245,7 @@ public class IntelHexFile {
 		return writtenBytes;
 	}
 
-	private HexFileLine createAndInsertNewLine(HexFileLine predecessor, long startAddress, byte[] bs, int offset,
+	private HexFileLine createAndInsertNewLine(HexFileLine predecessor, HexFileLine successor, long startAddress, byte[] bs, int offset,
 			int maxLength) {
 		int l = Math.min(maxLength, maximumLineByteCount);
 		l = Math.min(l, bs.length - offset);
@@ -265,10 +265,15 @@ public class IntelHexFile {
 			}
 		} else {
 			if (startAddress - predecessor.getExtendedAddressOffset() > HexFileLine.ADDRESS_MAX) {
-				addressExtension = createNewAddressExtension(startAddress);
-				records.add(records.indexOf(predecessor) + 1, addressExtension);
+				if(startAddress - successor.getExtendedAddressOffset() > HexFileLine.ADDRESS_MAX
+						|| startAddress - successor.getExtendedAddressOffset() < 0) {
+					addressExtension = createNewAddressExtension(startAddress);
+					records.add(records.indexOf(predecessor) + 1, addressExtension);
+				} else {
+					addressExtension = successor.getAddressExtension();
+				}
 				predecessor = addressExtension;
-				address = (int) (startAddress - predecessor.getExtendedAddressOffset());
+				address = (int) (startAddress - addressExtension.getExtendedAddressOffset());
 			} else {
 				address = (int) (startAddress - predecessor.getExtendedAddressOffset());
 				addressExtension = predecessor.getAddressExtension();
@@ -285,8 +290,12 @@ public class IntelHexFile {
 		// determine type of address extensions used; default to LINEAR
 		RecordType extensionType = determineAddressExtensionType();
 		// calculate address extension offset
-		long addressExtensionOffset = AddressExtensionUtils.extensionOffsetFromFullAddress(extensionType, startAddress);
-		byte[] dataExtension = ByteUtils.longToByteArray(addressExtensionOffset);
+		int addressExtensionOffset = AddressExtensionUtils.extensionOffsetFromFullAddress(extensionType, startAddress);
+		assert addressExtensionOffset <= 0xFFFF;
+		byte[] dataExtension = ByteUtils.shortToByteArray((short) addressExtensionOffset);
+		
+		assert 2 == dataExtension.length;
+		
 		// create record
 		predecessor = new HexFileLine(0, extensionType, dataExtension, null);
 		return predecessor;
