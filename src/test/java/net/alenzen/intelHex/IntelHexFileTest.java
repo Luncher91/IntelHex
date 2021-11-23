@@ -288,7 +288,8 @@ public class IntelHexFileTest {
 
 		int numberOfDataLines = (int) f.getRecords().stream().filter(l -> l.getType() == RecordType.DATA)
 				.count();
-		assertEquals(originalNumberOfRecords + 2, f.getRecords().size());
+		// 2 data records; 1 extension line
+		assertEquals(originalNumberOfRecords + 3, f.getRecords().size());
 		assertEquals(originalNumberOfDataLines + 2, numberOfDataLines);
 		
 		byte[] bytes0001 = f.readBytes(0x0001FF08, 40);
