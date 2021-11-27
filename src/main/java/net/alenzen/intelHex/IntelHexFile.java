@@ -20,59 +20,78 @@ public class IntelHexFile {
 
 	private List<HexFileLine> records;
 	private short maximumLineByteCount = BYTE_COUNT_32;
+	private HexFormat hexFormat;
 
-	private IntelHexFile(List<HexFileLine> lines) {
+	private IntelHexFile(List<HexFileLine> lines, HexFormat format) {
 		this.records = lines;
+		this.hexFormat = format;
 	}
 
 	public static IntelHexFile parse(String filename)
 			throws InvalidFormatException, FileNotFoundException, IOException {
-		List<HexFileLine> lines = new ArrayList<HexFileLine>();
-		try (BufferedReader br = new BufferedReader(new FileReader(filename))) {
-			String line;
-			HexFileLine latestAddressExtension = null;
-			long linenumber = 0;
-			while ((line = br.readLine()) != null) {
-				linenumber++;
-				HexFileLine l = HexFileLine.parse(linenumber, line, latestAddressExtension);
+		return parse(new FileReader(filename), null);
+	}
 
-				if (l.getType() == RecordType.EXTENDED_LINEAR_ADDRESS
-						|| l.getType() == RecordType.EXTENDED_SEGMENT_ADDRESS) {
-					latestAddressExtension = l;
-				}
-
-				lines.add(l);
-			}
-		}
-
-		return new IntelHexFile(lines);
+	public static IntelHexFile parse(String filename, IParsingError log)
+			throws InvalidFormatException, FileNotFoundException, IOException {
+		return parse(new FileReader(filename), log);
 	}
 
 	public static IntelHexFile parse(InputStream fileStream) throws IOException, InvalidFormatException {
-		return parse(new InputStreamReader(fileStream));
+		return parse(new InputStreamReader(fileStream), null);
 	}
 
-	public static IntelHexFile parse(Reader fileStream)
-			throws IOException, InvalidFormatException {
+	public static IntelHexFile parse(InputStream s, IParsingError log) throws IOException, InvalidFormatException {
+		return parse(new InputStreamReader(s), log);
+	}
+
+	interface IParsingError {
+		public static final IParsingError VOID = (a, b, c) -> {
+		};
+
+		void log(long lineNumber, String line, String message);
+	}
+
+	public static IntelHexFile parse(Reader fileStream, IParsingError log) throws IOException, InvalidFormatException {
+		if (log == null) {
+			log = IParsingError.VOID;
+		}
+
 		List<HexFileLine> lines = new ArrayList<HexFileLine>();
+		HexFormat format = HexFormat.I8HEX;
 		try (BufferedReader br = new BufferedReader(fileStream)) {
 			String line;
 			HexFileLine latestAddressExtension = null;
 			long linenumber = 0;
 			while ((line = br.readLine()) != null) {
 				linenumber++;
-				HexFileLine l = HexFileLine.parse(linenumber, line, latestAddressExtension);
+				HexFileLine l = HexFileLine.parse(linenumber, line, latestAddressExtension, log);
+
+				if (l == null) {
+					continue;
+				}
 
 				if (l.getType() == RecordType.EXTENDED_LINEAR_ADDRESS
 						|| l.getType() == RecordType.EXTENDED_SEGMENT_ADDRESS) {
 					latestAddressExtension = l;
 				}
 
+				HexFormat formatFromLine = HexFormat.determineFormat(l.getType());
+
+				if (format == HexFormat.I8HEX) {
+					format = formatFromLine;
+				} else if (formatFromLine != HexFormat.I8HEX && formatFromLine != format) {
+					log.log(linenumber, line,
+							String.format(
+									"HexFile format is not clearly determinable. Expected %s but found record for %s",
+									format.name(), formatFromLine.name()));
+				}
+
 				lines.add(l);
 			}
 		}
 
-		return new IntelHexFile(lines);
+		return new IntelHexFile(lines, format);
 	}
 
 	public String toHexFileString() {
@@ -245,8 +264,8 @@ public class IntelHexFile {
 		return writtenBytes;
 	}
 
-	private HexFileLine createAndInsertNewLine(HexFileLine predecessor, HexFileLine successor, long startAddress, byte[] bs, int offset,
-			int maxLength) {
+	private HexFileLine createAndInsertNewLine(HexFileLine predecessor, HexFileLine successor, long startAddress,
+			byte[] bs, int offset, int maxLength) {
 		int l = Math.min(maxLength, maximumLineByteCount);
 		l = Math.min(l, bs.length - offset);
 		byte[] slice = Arrays.copyOfRange(bs, offset, offset + l);
@@ -265,7 +284,7 @@ public class IntelHexFile {
 			}
 		} else {
 			if (startAddress - predecessor.getExtendedAddressOffset() > HexFileLine.ADDRESS_MAX) {
-				if(startAddress - successor.getExtendedAddressOffset() > HexFileLine.ADDRESS_MAX
+				if (successor == null || startAddress - successor.getExtendedAddressOffset() > HexFileLine.ADDRESS_MAX
 						|| startAddress - successor.getExtendedAddressOffset() < 0) {
 					addressExtension = createNewAddressExtension(startAddress);
 					records.add(records.indexOf(predecessor) + 1, addressExtension);
@@ -293,9 +312,9 @@ public class IntelHexFile {
 		int addressExtensionOffset = AddressExtensionUtils.extensionOffsetFromFullAddress(extensionType, startAddress);
 		assert addressExtensionOffset <= 0xFFFF;
 		byte[] dataExtension = ByteUtils.shortToByteArray((short) addressExtensionOffset);
-		
+
 		assert 2 == dataExtension.length;
-		
+
 		// create record
 		predecessor = new HexFileLine(0, extensionType, dataExtension, null);
 		return predecessor;
@@ -325,12 +344,13 @@ public class IntelHexFile {
 	 * Determines the gap size between lower and upper. If lower is null the size is
 	 * equal to the full start address of upper. If upper is null the gap size is
 	 * equal to Long.MAX_VALUE.
+	 * 
 	 * @param address address where to start writing
 	 * 
 	 * @param lower
 	 * @param upper
-	 * @return Number of bytes between Math.max(lower, address) and upper. -1 in case lower and upper
-	 *         are null.
+	 * @return Number of bytes between Math.max(lower, address) and upper. -1 in
+	 *         case lower and upper are null.
 	 */
 	private long determineGapSize(long address, HexFileLine lower, HexFileLine upper) {
 		long realSize = 0;
@@ -342,7 +362,7 @@ public class IntelHexFile {
 		if (lower == null) {
 			realSize = upper.getFullStartAddress();
 		}
-		
+
 		long lowerEndAddress = lower.getFullStartAddress() + lower.getLength();
 		lowerEndAddress = Math.max(lowerEndAddress, address);
 
@@ -363,5 +383,9 @@ public class IntelHexFile {
 
 	public void setMaximumLineByteCount(short maximumLineByteCount) {
 		this.maximumLineByteCount = maximumLineByteCount;
+	}
+
+	public HexFormat getHexFormat() {
+		return hexFormat;
 	}
 }

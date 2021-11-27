@@ -1,22 +1,27 @@
 package net.alenzen.intelHex;
 
 public enum TestFile {
-	A("validFile.hex"),
-	B("extensionGap.hex"),
-	C("extensionMiddleLeftChunk.hex"),
-	D("extensionMiddleRightChunk.hex");
+	A("validFile.hex", HexFormat.I8HEX),
+	B("extensionGap.hex", HexFormat.I32HEX),
+	C("extensionMiddleLeftChunk.hex", HexFormat.I32HEX),
+	D("extensionMiddleRightChunk.hex", HexFormat.I32HEX),
+	E("extensionMiddleRightChunk_segment.hex", HexFormat.I16HEX),
+	F("extensionMiddleLeftChunk_segment.hex", HexFormat.I16HEX),
+	G("extensionGap_segment.hex", HexFormat.I16HEX);
 
 	private String filename;
+	private HexFormat format;
 
-	TestFile(String fName) {
-		setFilename(fName);
+	TestFile(String fName, HexFormat format) {
+		this.filename = fName;
+		this.format = format;
 	}
 
 	public String getFilename() {
 		return filename;
 	}
 
-	public void setFilename(String filename) {
-		this.filename = filename;
+	public HexFormat getFormat() {
+		return format;
 	}
 }

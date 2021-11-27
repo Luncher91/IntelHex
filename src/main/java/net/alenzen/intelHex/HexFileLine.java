@@ -1,5 +1,7 @@
 package net.alenzen.intelHex;
 
+import net.alenzen.intelHex.IntelHexFile.IParsingError;
+
 public class HexFileLine {
 	public static final int ADDRESS_MAX = 0xFFFF;
 	private long lineNumber;
@@ -11,7 +13,7 @@ public class HexFileLine {
 	private byte checksum;
 
 	public HexFileLine(long lineNumber, short length, int address, byte type, byte[] data, byte checksum,
-			HexFileLine addressExtension) {
+			HexFileLine addressExtension) throws EnumConstantNotPresentException {
 		this.lineNumber = lineNumber;
 		this.addressExtension = addressExtension;
 		this.length = length;
@@ -104,30 +106,37 @@ public class HexFileLine {
 		this.checksum = checksum;
 	}
 
-	public static HexFileLine parse(long linenumber, String line, HexFileLine latestAddressExtension)
-			throws InvalidFormatException {
+	public static HexFileLine parse(long linenumber, String line, HexFileLine latestAddressExtension,
+			IParsingError log) {
 		line = line.trim();
 
 		if (!line.startsWith(":")) {
-			throw new InvalidFormatException("Line does not start with colon!");
+			log.log(linenumber, line, "Line does not start with ':'. Added : and try to continue.");
+			line = ':' + line;
 		}
 
-		// read length
-		if (line.length() < 3) {
-			throw new InvalidFormatException("Line does not contain the length!");
+		if (line.length() < 11) {
+			log.log(linenumber, line, "Line does not meet the minimal length of 10. Skipping line.");
+			return null;
 		}
 
-		short length = parseShortHex(line.substring(1, 3));
-		int address = parseHex(line.substring(3, 7));
-		byte type = parseHexByte(line.substring(7, 9));
+		try {
+			short length = parseShortHex(line.substring(1, 3));
+			int address = parseHex(line.substring(3, 7));
+			byte type = parseHexByte(line.substring(7, 9));
 
-		byte checksum = parseHexByte(line.substring(line.length() - 2, line.length()));
+			byte checksum = parseHexByte(line.substring(line.length() - 2, line.length()));
 
-		byte[] data = parseHexPerByte(line.substring(9, line.length() - 2));
+			byte[] data = parseHexPerByte(line.substring(9, line.length() - 2));
 
-		HexFileLine l = new HexFileLine(linenumber, length, address, type, data, checksum, latestAddressExtension);
-
-		return l;
+			return new HexFileLine(linenumber, length, address, type, data, checksum, latestAddressExtension);
+		} catch (NumberFormatException e) {
+			log.log(linenumber, line, String.format("Invalid hex symbols: %s\nSkipping line.", e.getMessage()));
+			return null;
+		} catch(EnumConstantNotPresentException e1) {
+			log.log(linenumber, line, String.format("Cannot determine record type: %s\nSkipping line.", e1.getMessage()));
+			return null;
+		}
 	}
 
 	public String toString() {

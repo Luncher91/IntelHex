@@ -22,7 +22,7 @@ public enum RecordType {
 		return ordinal;
 	}
 	
-	public static RecordType fromValue(byte ordinal) {
+	public static RecordType fromValue(byte ordinal) throws EnumConstantNotPresentException {
 		switch (ordinal) {
 		case 0:
 			return RecordType.DATA;

@@ -3,6 +3,7 @@ package net.alenzen.intelHex;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -19,11 +20,15 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import net.alenzen.intelHex.IntelHexFile.IParsingError;
+
 public class IntelHexFileTest {
+	private static final IParsingError FAIL_ON_TRIGGER = (i, line, m) -> fail(i + ": " + m);
+
 	public static IntelHexFile getTestFile(TestFile tf) throws IOException, InvalidFormatException {
 		IntelHexFile f;
 		try (InputStream s = ClassLoader.getSystemResourceAsStream(tf.getFilename())) {
-			f = IntelHexFile.parse(s);
+			f = IntelHexFile.parse(s, FAIL_ON_TRIGGER);
 		}
 		return f;
 	}
@@ -42,6 +47,7 @@ public class IntelHexFileTest {
 		assertTrue(hexFile.getRecords().stream().allMatch(r -> r.isChecksumValid()));
 		assertTrue(hexFile.getRecords().stream().allMatch(r -> r.isLengthValid()));
 		assertEquals(countColons(tf), hexFile.getRecords().size());
+		assertEquals(tf.getFormat(), hexFile.getHexFormat());
 	}
 
 	private int countColons(TestFile tf) throws IOException {
@@ -198,9 +204,11 @@ public class IntelHexFileTest {
 		return bs;
 	}
 
-	@Test
-	public void testSetDataInExtensionGapWithoutTouchingBorders() throws IOException, InvalidFormatException {
-		IntelHexFile file = getTestFile(TestFile.B);
+	@ParameterizedTest
+	@EnumSource(value = TestFile.class, names = { "B", "G" })
+	public void testSetDataInExtensionGapWithoutTouchingBorders(TestFile tf)
+			throws IOException, InvalidFormatException {
+		IntelHexFile file = getTestFile(tf);
 		int originalNumberOfRecords = file.getRecords().size();
 		int originalNumberOfDataLines = (int) file.getRecords().stream().filter(l -> l.getType() == RecordType.DATA)
 				.count();
@@ -213,7 +221,7 @@ public class IntelHexFileTest {
 		file.updateBytes(0x0002AA00, bs);
 
 		int numberOfExtensionLines = (int) file.getRecords().stream()
-				.filter(l -> l.getType() == RecordType.EXTENDED_LINEAR_ADDRESS).count();
+				.filter(l -> l.getType() == tf.getFormat().getAddressExtension()).count();
 		assertEquals(3, numberOfExtensionLines);
 		int numberOfExpectedAdditionalDataLines = newDataBytes / file.getMaximumLineByteCount();
 		int numberOfDataLines = (int) file.getRecords().stream().filter(l -> l.getType() == RecordType.DATA).count();
@@ -231,9 +239,10 @@ public class IntelHexFileTest {
 		assertArrayEquals(bs, bytesWritten);
 	}
 
-	@Test
-	public void testSetDataAccrossExistingLeftChunk() throws IOException, InvalidFormatException {
-		IntelHexFile f = getTestFile(TestFile.C);
+	@ParameterizedTest
+	@EnumSource(value = TestFile.class, names = { "C", "F" })
+	public void testSetDataAccrossExistingLeftChunk(TestFile tf) throws IOException, InvalidFormatException {
+		IntelHexFile f = getTestFile(tf);
 		byte[] originalBytes0001 = f.readBytes(0x0001FF08, 40);
 		byte[] originalBytes0003 = f.readBytes(0x00030000, 40);
 
@@ -247,29 +256,29 @@ public class IntelHexFileTest {
 		f.updateBytes(0x0001FFF8, bs);
 
 		int numberOfExtensionLines = (int) f.getRecords().stream()
-				.filter(l -> l.getType() == RecordType.EXTENDED_LINEAR_ADDRESS).count();
+				.filter(l -> l.getType() == tf.getFormat().getAddressExtension()).count();
 		assertEquals(3, numberOfExtensionLines);
 
-		int numberOfDataLines = (int) f.getRecords().stream().filter(l -> l.getType() == RecordType.DATA)
-				.count();
+		int numberOfDataLines = (int) f.getRecords().stream().filter(l -> l.getType() == RecordType.DATA).count();
 		assertEquals(originalNumberOfRecords + 2, f.getRecords().size());
 		assertEquals(originalNumberOfDataLines + 2, numberOfDataLines);
-		
+
 		byte[] bytes0001 = f.readBytes(0x0001FF08, 40);
 		byte[] writtenChunk = f.readBytes(0x0001FFF8, newDataBytes);
 		byte[] bytes0003 = f.readBytes(0x00030000, 40);
 		assertArrayEquals(originalBytes0001, bytes0001);
 		assertArrayEquals(originalBytes0003, bytes0003);
 		assertArrayEquals(bs, writtenChunk);
-		
+
 		assertEquals(8, f.findLineByAddress(0x0001FFF8).get().getData().length);
 		assertEquals(8, f.findLineByAddress(0x00020000).get().getData().length);
 		assertEquals(8, f.findLineByAddress(0x00020008).get().getData().length);
 	}
 
-	@Test
-	public void testSetDataAccrossExistingRightChunk() throws IOException, InvalidFormatException {
-		IntelHexFile f = getTestFile(TestFile.D);
+	@ParameterizedTest
+	@EnumSource(value = TestFile.class, names = { "D", "E" })
+	public void testSetDataAccrossExistingRightChunk(TestFile tf) throws IOException, InvalidFormatException {
+		IntelHexFile f = getTestFile(tf);
 		byte[] originalBytes0001 = f.readBytes(0x0001FF08, 40);
 		byte[] originalBytes0003 = f.readBytes(0x00040000, 40);
 
@@ -283,26 +292,23 @@ public class IntelHexFileTest {
 		f.updateBytes(0x0002FFF0, bs);
 
 		int numberOfExtensionLines = (int) f.getRecords().stream()
-				.filter(l -> l.getType() == RecordType.EXTENDED_LINEAR_ADDRESS).count();
+				.filter(l -> l.getType() == tf.getFormat().getAddressExtension()).count();
 		assertEquals(4, numberOfExtensionLines);
 
-		int numberOfDataLines = (int) f.getRecords().stream().filter(l -> l.getType() == RecordType.DATA)
-				.count();
+		int numberOfDataLines = (int) f.getRecords().stream().filter(l -> l.getType() == RecordType.DATA).count();
 		// 2 data records; 1 extension line
 		assertEquals(originalNumberOfRecords + 3, f.getRecords().size());
 		assertEquals(originalNumberOfDataLines + 2, numberOfDataLines);
-		
+
 		byte[] bytes0001 = f.readBytes(0x0001FF08, 40);
 		byte[] writtenChunk = f.readBytes(0x0002FFF0, newDataBytes);
 		byte[] bytes0003 = f.readBytes(0x00040000, 40);
 		assertArrayEquals(originalBytes0001, bytes0001);
 		assertArrayEquals(originalBytes0003, bytes0003);
 		assertArrayEquals(bs, writtenChunk);
-		
+
 		assertEquals(8, f.findLineByAddress(0x0002FFF0).get().getData().length);
 		assertEquals(8, f.findLineByAddress(0x0002FFF8).get().getData().length);
 		assertEquals(8, f.findLineByAddress(0x00030000).get().getData().length);
 	}
-	// TODO more tests for updates with address extensions
-	// run tests for EXTENDED_SEGMENT_ADDRESS as well (ParameterizedTest?)
 }
