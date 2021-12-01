@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -217,14 +218,11 @@ public class IntelHexFile {
 	private int createLineInGap(long address, int offset, byte[] bs) {
 		int result = Arrays.binarySearch(hexlineIndex, address);
 
-		if (result >= 0) {
-			// TODO: failure: matched a line border and therefore is part of a line
+		if (result >= 0 || result % 2 == 0) {
+			throw new InvalidParameterException("Address is actually part of an existing line!");
 		}
 
 		result *= -1;
-		if (result % 2 == 0) {
-			// TODO failure: fell into a hex line
-		}
 
 		HexFileLine lower = null;
 		if (result > 0) {
