@@ -4,10 +4,28 @@
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>intelhex</artifactId>
 	<name>Intel Hex Parser</name>
-	<groupId>IntelHex</groupId>
+	<groupId>net.alenzen.intelHex</groupId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<description>Library to read and modify Intel Hex Files</description>
+	<url>https://github.com/Luncher91/IntelHex/</url>
+	<licenses>
+		<license>
+			<name>MIT License</name>
+			<url>https://github.com/Luncher91/IntelHex/blob/master/LICENSE</url>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
+	<scm>
+		<url>https://github.com/Luncher91/IntelHex.git</url>
+	</scm>
+	<distributionManagement>
+		<repository>
+			<id>github</id>
+			<name>GitHub Luncher91 Apache Maven Packages</name>
+			<url>https://maven.pkg.github.com/Luncher91/IntelHex</url>
+		</repository>
+	</distributionManagement>
 	<properties>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
