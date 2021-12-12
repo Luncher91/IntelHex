@@ -28,7 +28,7 @@
 	</distributionManagement>
 	<properties>
 		<maven.compiler.source>1.8</maven.compiler.source>
-		<maven.compiler.target>${java.version}</maven.compiler.target>
+		<maven.compiler.target>1.8</maven.compiler.target>
 		<junit.jupiter.version>5.6.2</junit.jupiter.version>
 	</properties>
 	<build>
