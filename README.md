@@ -44,6 +44,5 @@ for(Entry<Long, Byte> entry : hexFile) {
 
 ## Roadmap
 
-* 'write' method to write hex file to stream or file
 * reduce direct access to the records to guarantee a consistent index
 * Serialization to JSON

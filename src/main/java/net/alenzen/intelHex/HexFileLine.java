@@ -1,5 +1,9 @@
 package net.alenzen.intelHex;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.Charset;
+
 import net.alenzen.intelHex.IntelHexFile.IParsingError;
 
 public class HexFileLine {
@@ -278,5 +282,9 @@ public class HexFileLine {
 		}
 
 		this.data = newData;
+	}
+
+	public void writeTo(OutputStream os, Charset cs) throws IOException {
+		os.write(this.toString().getBytes(cs));
 	}
 }

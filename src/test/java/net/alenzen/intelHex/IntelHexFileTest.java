@@ -8,7 +8,9 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Function;
@@ -310,5 +312,26 @@ public class IntelHexFileTest {
 		assertEquals(8, f.findLineByAddress(0x0002FFF0).get().getData().length);
 		assertEquals(8, f.findLineByAddress(0x0002FFF8).get().getData().length);
 		assertEquals(8, f.findLineByAddress(0x00030000).get().getData().length);
+	}
+	
+	@Test
+	public void testWriteToStream() throws IOException, InvalidFormatException {
+		IntelHexFile f = getTestFile(TestFile.B);
+		byte[] bytesFromToString = f.toHexFileString().getBytes(StandardCharsets.UTF_8);
+		byte[] bytesWritten = new byte[bytesFromToString.length];
+		
+		OutputStream os = new OutputStream() {
+			int writtenBytesCnt = 0;
+			
+			@Override
+			public void write(int b) throws IOException {
+				bytesWritten[writtenBytesCnt++] = (byte) b;
+			}
+		};
+		
+		f.writeTo(os);
+		os.close();
+		
+		assertArrayEquals(bytesFromToString, bytesWritten);
 	}
 }

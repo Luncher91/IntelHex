@@ -4,6 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+
 import org.junit.jupiter.api.Test;
 
 import net.alenzen.intelHex.IntelHexFile.IParsingError;
@@ -38,5 +42,26 @@ public class HexFileLineTest {
 		String hexLineFromWiki = ":0300300002337A1E";
 		HexFileLine l = HexFileLine.parse(0, hexLineFromWiki, null, FAIL_ON_TRIGGER);
 		assertEquals(hexLineFromWiki, l.toString());
+	}
+	
+	@Test
+	public void testWriteToStream() throws IOException {
+		String hexLineFromWiki = ":0300300002337A1E";
+		HexFileLine l = HexFileLine.parse(0, hexLineFromWiki, null, FAIL_ON_TRIGGER);
+		
+		byte[] strAsBytes = hexLineFromWiki.getBytes(StandardCharsets.UTF_8);
+		byte[] writtenBytes = new byte[strAsBytes.length];
+		OutputStream os = new OutputStream() {
+			int writtenBytesCnt = 0;
+			
+			@Override
+			public void write(int b) throws IOException {
+				writtenBytes[writtenBytesCnt++] = (byte) b;
+			}
+		};
+		l.writeTo(os, StandardCharsets.UTF_8);
+		os.close();
+		
+		assertArrayEquals(strAsBytes, writtenBytes);
 	}
 }

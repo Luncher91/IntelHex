@@ -2,11 +2,15 @@ package net.alenzen.intelHex;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.Reader;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -104,6 +108,53 @@ public class IntelHexFile implements Iterable<Entry<Long, Byte>> {
 		}
 
 		return stb.toString();
+	}
+	
+	/**
+	 * Writes the hex file as string data to the OutputStream.
+	 * This method uses the given character set.
+	 * @param os
+	 * @param cs Charset which shall be used to encode the characters.
+	 * @throws IOException
+	 */
+	public void writeTo(OutputStream os, Charset cs) throws IOException {
+		for (HexFileLine l : records) {
+			l.writeTo(os, cs);
+			os.write(System.lineSeparator().getBytes(cs));
+		}
+	}
+	
+	/**
+	 * Writes the hex file as string data to the OutputStream.
+	 * This method uses the UTF-8 character set.
+	 * @param os
+	 * @throws IOException
+	 */
+	public void writeTo(OutputStream os) throws IOException {
+		writeTo(os, StandardCharsets.UTF_8);
+	}
+	
+	/**
+	 * Writes the hex file as string data to the given file.
+	 * This method uses the UTF-8 character set.
+	 * @param file File path to which the data shall be written to.
+	 * @param cs Charset which shall be used to encode the characters.
+	 * @throws IOException
+	 */
+	public void writeTo(String file, Charset cs) throws IOException {
+		FileOutputStream f = new FileOutputStream(file);
+		writeTo(f, cs);
+		f.close();
+	}
+	
+	/**
+	 * Writes the hex file as string data to the OutputStream.
+	 * This method uses the UTF-8 character set.
+	 * @param file Filepath to which the data shall be written to.
+	 * @throws IOException
+	 */
+	public void writeTo(String file) throws IOException {
+		writeTo(file, StandardCharsets.UTF_8);
 	}
 
 	public List<HexFileLine> getRecords() {
