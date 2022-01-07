@@ -266,6 +266,8 @@ public class HexFileLine {
 			this.data[lineOffset++] = bs[offset++];
 		}
 
+		updateMetadata();
+
 		return bulkByteEdit;
 	}
 
