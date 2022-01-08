@@ -43,17 +43,34 @@ public class HexFileLineTest {
 		HexFileLine l = HexFileLine.parse(0, hexLineFromWiki, null, FAIL_ON_TRIGGER);
 		assertEquals(hexLineFromWiki, l.toString());
 	}
-	
+
+	@Test
+	public void testUpdateBytes_updateChecksum() throws InvalidFormatException {
+		String hexLineFromWiki = ":0300300002337A1E";
+		HexFileLine l = HexFileLine.parse(0, hexLineFromWiki, null, FAIL_ON_TRIGGER);
+		l.updateBytes(l.getFullStartAddress(), 0, new byte[] { (byte) 0xAA, (byte) 0xAA });
+		assertEquals(-1, l.getChecksum());
+	}
+
+	@Test
+	public void testExtendLine_updateLengthAndChecksum() throws InvalidFormatException {
+		String hexLineFromWiki = ":0300300002337A1E";
+		HexFileLine l = HexFileLine.parse(0, hexLineFromWiki, null, FAIL_ON_TRIGGER);
+		l.extendLine(2, new byte[] { (byte) 0xAA, (byte) 0xAA }, 0);
+		assertEquals(-56, l.getChecksum());
+		assertEquals(5, l.getLength());
+	}
+
 	@Test
 	public void testWriteToStream() throws IOException {
 		String hexLineFromWiki = ":0300300002337A1E";
 		HexFileLine l = HexFileLine.parse(0, hexLineFromWiki, null, FAIL_ON_TRIGGER);
-		
+
 		byte[] strAsBytes = hexLineFromWiki.getBytes(StandardCharsets.UTF_8);
 		byte[] writtenBytes = new byte[strAsBytes.length];
 		OutputStream os = new OutputStream() {
 			int writtenBytesCnt = 0;
-			
+
 			@Override
 			public void write(int b) throws IOException {
 				writtenBytes[writtenBytesCnt++] = (byte) b;
@@ -61,7 +78,7 @@ public class HexFileLineTest {
 		};
 		l.writeTo(os, StandardCharsets.UTF_8);
 		os.close();
-		
+
 		assertArrayEquals(strAsBytes, writtenBytes);
 	}
 }
