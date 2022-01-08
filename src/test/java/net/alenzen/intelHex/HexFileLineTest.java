@@ -49,7 +49,7 @@ public class HexFileLineTest {
 		String hexLineFromWiki = ":0300300002337A1E";
 		HexFileLine l = HexFileLine.parse(0, hexLineFromWiki, null, FAIL_ON_TRIGGER);
 		l.updateBytes(l.getFullStartAddress(), 0, new byte[] { (byte) 0xAA, (byte) 0xAA });
-		assertEquals(118, l.getChecksum());
+		assertEquals(-1, l.getChecksum());
 	}
 
 	@Test
