@@ -137,8 +137,9 @@ public class HexFileLine {
 		} catch (NumberFormatException e) {
 			log.log(linenumber, line, String.format("Invalid hex symbols: %s\nSkipping line.", e.getMessage()));
 			return null;
-		} catch(EnumConstantNotPresentException e1) {
-			log.log(linenumber, line, String.format("Cannot determine record type: %s\nSkipping line.", e1.getMessage()));
+		} catch (EnumConstantNotPresentException e1) {
+			log.log(linenumber, line,
+					String.format("Cannot determine record type: %s\nSkipping line.", e1.getMessage()));
 			return null;
 		}
 	}
@@ -258,6 +259,14 @@ public class HexFileLine {
 		return bulkByteRead;
 	}
 
+	/**
+	 * Updates existing bytes of the line starting at the full address 'startAddress'.
+	 * 
+	 * @param startAddress full start address where the data should be written to.
+	 * @param offset Offset which need to be applied to the indexes of bs
+	 * @param bs Data which is written to the line
+	 * @return
+	 */
 	public int updateBytes(long startAddress, int offset, byte[] bs) {
 		int lineOffset = (int) (startAddress - this.getFullStartAddress());
 		int bulkByteEdit = Math.min(bs.length - offset, this.data.length - lineOffset);
@@ -266,11 +275,18 @@ public class HexFileLine {
 			this.data[lineOffset++] = bs[offset++];
 		}
 
-		updateMetadata();
+		updateChecksum();
 
 		return bulkByteEdit;
 	}
 
+	/**
+	 * Extends the line by extensionSize in length and writes bytes of bs to the newly created bytes.
+	 * 
+	 * @param extensionSize Number of bytes the line shall be extended by.
+	 * @param bs THe data which is written to the end of the line.
+	 * @param offset The offset applied to the indexes of bs
+	 */
 	public void extendLine(int extensionSize, byte[] bs, int offset) {
 		byte[] newData = new byte[this.data.length + extensionSize];
 
@@ -284,6 +300,8 @@ public class HexFileLine {
 		}
 
 		this.data = newData;
+
+		updateMetadata();
 	}
 
 	public void writeTo(OutputStream os, Charset cs) throws IOException {
