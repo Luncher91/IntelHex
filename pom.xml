@@ -5,7 +5,7 @@
 	<artifactId>intelhex</artifactId>
 	<name>Intel Hex Parser</name>
 	<groupId>net.alenzen.intelHex</groupId>
-	<version>0.0.1-SNAPSHOT-jdk${java.version}</version>
+	<version>0.0.2-SNAPSHOT-jdk${java.version}</version>
 	<packaging>jar</packaging>
 	<description>Library to read and modify Intel Hex Files</description>
 	<url>https://github.com/Luncher91/IntelHex/</url>
