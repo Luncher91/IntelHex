@@ -208,7 +208,7 @@ public class HexFileLine {
 	private static byte[] parseHexPerByte(String hex) {
 		byte[] d = new byte[hex.length() / 2];
 		for (int i = 0; i < d.length; i++) {
-			d[i] = Byte.parseByte(hex.substring(i * 2, i * 2 + 2), 16);
+			d[i] = (byte) Short.parseShort(hex.substring(i * 2, i * 2 + 2), 16);
 		}
 		return d;
 	}
