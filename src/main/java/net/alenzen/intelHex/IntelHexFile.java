@@ -64,7 +64,7 @@ public class IntelHexFile implements Iterable<Entry<Long, Byte>> {
 
 		List<HexFileLine> lines = new ArrayList<HexFileLine>();
 		HexFormat format = HexFormat.I8HEX;
-		try (BufferedReader br = new BufferedReader(fileStream)) {
+		try (BufferedReader br = new BufferedReaderHexLines(fileStream)) {
 			String line;
 			HexFileLine latestAddressExtension = null;
 			long linenumber = 0;

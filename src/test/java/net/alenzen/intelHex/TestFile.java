@@ -7,7 +7,8 @@ public enum TestFile {
 	D("extensionMiddleRightChunk.hex", HexFormat.I32HEX),
 	E("extensionMiddleRightChunk_segment.hex", HexFormat.I16HEX),
 	F("extensionMiddleLeftChunk_segment.hex", HexFormat.I16HEX),
-	G("extensionGap_segment.hex", HexFormat.I16HEX);
+	G("extensionGap_segment.hex", HexFormat.I16HEX),
+	H("validFileSingleLine.hex", HexFormat.I8HEX);
 
 	private String filename;
 	private HexFormat format;
