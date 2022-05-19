@@ -1,14 +1,16 @@
 package net.alenzen.intelHex;
 
 import java.security.InvalidParameterException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class HexLineIndex {
 	private List<HexFileLine> sortedDataLines = null;
-	private long[] hexlineIndex = null;
+	private List<Long> hexlineIndex = null;
 	private IntelHexFile hf;
 
 	public HexLineIndex(IntelHexFile intelHexFile) {
@@ -20,19 +22,34 @@ public class HexLineIndex {
 		sortedDataLines = hf.getRecords().stream().filter(l -> l.getType() == RecordType.DATA)
 				.sorted((l1, l2) -> Long.compare(l1.getFullStartAddress(), l2.getFullStartAddress()))
 				.collect(Collectors.toList());
-		long[] ranges = new long[getSortedDataLines().size() * 2];
-		int i = 0;
+		buildIndexRanges();
+	}
+
+	/**
+	 * sortedDataLines needs to be sorted
+	 */
+	private void buildIndexRanges() {
+		List<Long> ranges = new ArrayList<Long>(getSortedDataLines().size() * 2);
 		for (HexFileLine l : getSortedDataLines()) {
-			ranges[i] = l.getFullStartAddress();
-			ranges[i + 1] = ranges[i] + l.getLength() - 1;
-			i += 2;
-			;
+			long start = l.getFullStartAddress();
+			long end = start + l.getLength() - 1;
+			ranges.add(start);
+			ranges.add(end);
 		}
 		hexlineIndex = ranges;
 	}
 
+	private void addLineToIndexRanges(int sortedIndex, HexFileLine line) {
+		int rangeIndex = sortedIndex * 2;
+		long newLineStart = line.getFullStartAddress();
+		long newLineEnd = newLineStart + line.getLength() - 1;
+
+		hexlineIndex.add(rangeIndex, newLineStart);
+		hexlineIndex.add(rangeIndex + 1, newLineEnd);
+	}
+
 	public Optional<HexFileLine> findLineByAddress(long address) {
-		int result = Arrays.binarySearch(hexlineIndex, address);
+		int result = Collections.binarySearch(hexlineIndex, address);
 
 		if (result >= 0) {
 			return Optional.of(getSortedDataLines().get(result / 2));
@@ -47,7 +64,7 @@ public class HexLineIndex {
 	}
 
 	public int createLineInGap(long address, int offset, byte[] bs) {
-		int result = Arrays.binarySearch(hexlineIndex, address);
+		int result = Collections.binarySearch(hexlineIndex, address);
 
 		if (result >= 0 || result % 2 == 0) {
 			throw new InvalidParameterException("Address is actually part of an existing line!");
@@ -56,12 +73,12 @@ public class HexLineIndex {
 		result *= -1;
 
 		HexFileLine lower = null;
-		if (result > 0) {
+		if (result > 2) {
 			lower = getSortedDataLines().get((result - 3) / 2);
 		}
 
 		HexFileLine upper = null;
-		if (result < hexlineIndex.length) {
+		if (result < hexlineIndex.size()) {
 			upper = getSortedDataLines().get((result - 1) / 2);
 		}
 
@@ -88,8 +105,6 @@ public class HexLineIndex {
 			numberOfLines = determineNumberOfLines(length);
 		}
 
-		setupIndex();
-
 		return writtenBytes;
 	}
 
@@ -114,34 +129,36 @@ public class HexLineIndex {
 	 *         case lower and upper are null.
 	 */
 	private long determineGapSize(long address, HexFileLine lower, HexFileLine upper) {
-		long realSize = 0;
-
-		if (upper == null && lower == null) {
-			return -1;
+		if (upper == null) {
+			return Long.MAX_VALUE;
 		}
 
 		if (lower == null) {
-			realSize = upper.getFullStartAddress();
+			return upper.getFullStartAddress();
 		}
 
 		long lowerEndAddress = lower.getFullStartAddress() + lower.getLength();
 		lowerEndAddress = Math.max(lowerEndAddress, address);
 
-		if (upper == null) {
-			realSize = Long.MAX_VALUE;
-		}
-
-		if (lower != null && upper != null) {
-			realSize = upper.getFullStartAddress() - lowerEndAddress;
-		}
-
-		return realSize;
+		return upper.getFullStartAddress() - lowerEndAddress;
 	}
 
+	/**
+	 * Preserves the index
+	 * 
+	 * @param predecessor
+	 * @param successor
+	 * @param startAddress
+	 * @param bs
+	 * @param offset
+	 * @param maxLength
+	 * @return
+	 */
 	private HexFileLine createAndInsertNewLine(HexFileLine predecessor, HexFileLine successor, long startAddress,
 			byte[] bs, int offset, int maxLength) {
 		int l = Math.min(maxLength, hf.getMaximumLineByteCount());
 		l = Math.min(l, bs.length - offset);
+
 		byte[] slice = Arrays.copyOfRange(bs, offset, offset + l);
 
 		int address = 0;
@@ -175,7 +192,26 @@ public class HexLineIndex {
 
 		HexFileLine line = new HexFileLine(address, RecordType.DATA, slice, addressExtension);
 		hf.getRecords().add(hf.getRecords().indexOf(predecessor) + 1, line);
+		addLineToSortedList(line);
 		return line;
+	}
+
+	private void addLineToSortedList(HexFileLine line) {
+		if (line.getType() != RecordType.DATA)
+			return;
+		int sortedIndex = getNewIndexByLine(line);
+		sortedDataLines.add(sortedIndex, line);
+		addLineToIndexRanges(sortedIndex, line);
+	}
+
+	private int getNewIndexByLine(HexFileLine line) {
+		int result = Collections.binarySearch(hexlineIndex, line.getFullStartAddress());
+
+		if (result >= 0 || result % 2 == 0) {
+			throw new InvalidParameterException("Address is actually part of an existing line!");
+		}
+
+		return ((result * -1) - 1) / 2;
 	}
 
 	private HexFileLine createNewAddressExtension(long startAddress) {

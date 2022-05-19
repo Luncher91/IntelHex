@@ -204,6 +204,15 @@ public class IntelHexFile implements Iterable<Entry<Long, Byte>> {
 	}
 
 	private void setupIndex() {
+		if(this.index == null) {
+			this.index = new HexLineIndex(this);
+		}
+	}
+	
+	/**
+	 * Should be called whenever the records have been manually modified.
+	 */
+	public void refreshIndex() {
 		this.index = new HexLineIndex(this);
 	}
 
