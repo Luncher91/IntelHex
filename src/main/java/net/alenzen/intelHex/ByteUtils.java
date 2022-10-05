@@ -1,6 +1,9 @@
 package net.alenzen.intelHex;
 
-public class ByteUtils {
+public final class ByteUtils {
+
+	private ByteUtils() {
+	}
 
 	public static long toLong(byte[] data) {
 		long l = 0;

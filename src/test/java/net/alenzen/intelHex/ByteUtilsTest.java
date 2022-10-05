@@ -1,5 +1,6 @@
 package net.alenzen.intelHex;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
@@ -16,10 +17,16 @@ public class ByteUtilsTest {
 		byte[] data = new byte[] { 0x03, 0x00, 0x30, 0x00, 0x02, 0x33, 0x7A };
 		assertEquals((byte) 0x1E, ByteUtils.intelHexChecksum(data));
 	}
-	
+
 	@Test
 	public void testIntelHexFileChecksum2() {
 		byte[] data = new byte[] { 0x01 };
 		assertEquals((byte) 0xFF, ByteUtils.intelHexChecksum(data));
+	}
+
+	@Test
+	public void testLongToByteArray() {
+		byte[] result = ByteUtils.longToByteArray(6148914691236517205L);
+		assertArrayEquals(new byte[] { 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55 }, result);
 	}
 }
