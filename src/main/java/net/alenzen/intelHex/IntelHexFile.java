@@ -16,6 +16,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class IntelHexFile implements Iterable<Entry<Long, Byte>> {
 	public static final short BYTE_COUNT_16 = 0x10;
@@ -100,19 +101,14 @@ public class IntelHexFile implements Iterable<Entry<Long, Byte>> {
 	}
 
 	public String toHexFileString() {
-		StringBuilder stb = new StringBuilder();
-
-		for (HexFileLine l : records) {
-			stb.append(l.toString());
-			stb.append(System.lineSeparator());
-		}
-
-		return stb.toString();
+		return records.stream().map(r -> r.toString()).collect(Collectors.joining(System.lineSeparator()))
+				+ System.lineSeparator();
 	}
-	
+
 	/**
-	 * Writes the hex file as string data to the OutputStream.
-	 * This method uses the given character set.
+	 * Writes the hex file as string data to the OutputStream. This method uses the
+	 * given character set.
+	 * 
 	 * @param os
 	 * @param cs Charset which shall be used to encode the characters.
 	 * @throws IOException
@@ -123,22 +119,24 @@ public class IntelHexFile implements Iterable<Entry<Long, Byte>> {
 			os.write(System.lineSeparator().getBytes(cs));
 		}
 	}
-	
+
 	/**
-	 * Writes the hex file as string data to the OutputStream.
-	 * This method uses the UTF-8 character set.
+	 * Writes the hex file as string data to the OutputStream. This method uses the
+	 * UTF-8 character set.
+	 * 
 	 * @param os
 	 * @throws IOException
 	 */
 	public void writeTo(OutputStream os) throws IOException {
 		writeTo(os, StandardCharsets.UTF_8);
 	}
-	
+
 	/**
-	 * Writes the hex file as string data to the given file.
-	 * This method uses the UTF-8 character set.
+	 * Writes the hex file as string data to the given file. This method uses the
+	 * UTF-8 character set.
+	 * 
 	 * @param file File path to which the data shall be written to.
-	 * @param cs Charset which shall be used to encode the characters.
+	 * @param cs   Charset which shall be used to encode the characters.
 	 * @throws IOException
 	 */
 	public void writeTo(String file, Charset cs) throws IOException {
@@ -146,10 +144,11 @@ public class IntelHexFile implements Iterable<Entry<Long, Byte>> {
 		writeTo(f, cs);
 		f.close();
 	}
-	
+
 	/**
-	 * Writes the hex file as string data to the OutputStream.
-	 * This method uses the UTF-8 character set.
+	 * Writes the hex file as string data to the OutputStream. This method uses the
+	 * UTF-8 character set.
+	 * 
 	 * @param file Filepath to which the data shall be written to.
 	 * @throws IOException
 	 */
@@ -204,11 +203,11 @@ public class IntelHexFile implements Iterable<Entry<Long, Byte>> {
 	}
 
 	private void setupIndex() {
-		if(this.index == null) {
+		if (this.index == null) {
 			this.index = new HexLineIndex(this);
 		}
 	}
-	
+
 	/**
 	 * Should be called whenever the records have been manually modified.
 	 */
@@ -241,7 +240,7 @@ public class IntelHexFile implements Iterable<Entry<Long, Byte>> {
 			}
 		}
 	}
-	
+
 	public boolean isDataDefined(long address) {
 		return findLineByAddress(address).isPresent();
 	}
