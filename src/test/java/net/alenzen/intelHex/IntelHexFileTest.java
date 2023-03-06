@@ -313,25 +313,40 @@ public class IntelHexFileTest {
 		assertEquals(8, f.findLineByAddress(0x0002FFF8).get().getData().length);
 		assertEquals(8, f.findLineByAddress(0x00030000).get().getData().length);
 	}
-	
+
 	@Test
 	public void testWriteToStream() throws IOException, InvalidFormatException {
 		IntelHexFile f = getTestFile(TestFile.B);
 		byte[] bytesFromToString = f.toHexFileString().getBytes(StandardCharsets.UTF_8);
 		byte[] bytesWritten = new byte[bytesFromToString.length];
-		
+
 		OutputStream os = new OutputStream() {
 			int writtenBytesCnt = 0;
-			
+
 			@Override
 			public void write(int b) throws IOException {
 				bytesWritten[writtenBytesCnt++] = (byte) b;
 			}
 		};
-		
+
 		f.writeTo(os);
 		os.close();
-		
+
 		assertArrayEquals(bytesFromToString, bytesWritten);
+	}
+
+	@Test
+	public void testPerformanceToString() throws IOException, InvalidFormatException {
+		Random r = new Random(1234);
+		IntelHexFile hf = getTestFile(TestFile.A);
+		byte[] randomBytes = new byte[1000000];
+		r.nextBytes(randomBytes);
+		hf.updateBytes(0, randomBytes);
+
+		long start = System.nanoTime();
+		hf.toHexFileString();
+
+		System.out
+				.println(String.format("Generating String took %.2f milliseconds", (System.nanoTime() - start) / 1000000.0));
 	}
 }

@@ -144,7 +144,8 @@ public class HexFileLine {
 		}
 	}
 
-	public String toString() {
+	// 830-860ms
+	public String toString_() {
 		StringBuilder stBuffer = new StringBuilder(":");
 
 		stBuffer.append(String.format("%02X", length));
@@ -156,6 +157,53 @@ public class HexFileLine {
 		stBuffer.append(String.format("%02X", checksum));
 
 		return stBuffer.toString();
+	}
+	
+	// 37-45ms
+	public String toString() {
+		char[] line = new char[11 + data.length * 2];
+		int i = 0;
+
+		line[i++] = ':';
+
+		byteToHex(line, i, (byte) (length & 0xFF));
+		i += 2;
+
+		shortToHex(line, i, (short) (address & 0xFFFF));
+		i += 4;
+
+		byteToHex(line, i, (byte) (type.getOrdinal() & 0xFF));
+		i += 2;
+
+		bytesToHex(line, i, data);
+		i += data.length * 2;
+
+		byteToHex(line, i, (byte) (checksum & 0xFF));
+
+		return new String(line);
+	}
+
+	private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
+	private static void shortToHex(char[] string, int stringOffset, short b) {
+		int v = b & 0xFFFF;
+		string[stringOffset] = HEX_ARRAY[v >>> 12];
+		string[stringOffset + 1] = HEX_ARRAY[v >>> 8 & 0x0F];
+		string[stringOffset + 2] = HEX_ARRAY[v >>> 4 & 0x0F];
+		string[stringOffset + 3] = HEX_ARRAY[v & 0x0F];
+	}
+
+	private static void byteToHex(char[] string, int stringOffset, byte b) {
+		int v = b & 0xFF;
+		string[stringOffset] = HEX_ARRAY[v >>> 4];
+		string[stringOffset + 1] = HEX_ARRAY[v & 0x0F];
+	}
+
+	private static void bytesToHex(char[] string, int stringOffset, byte[] bytes) {
+		for (int j = 0; j < bytes.length; j++) {
+			int v = bytes[j] & 0xFF;
+			string[stringOffset + j * 2] = HEX_ARRAY[v >>> 4];
+			string[stringOffset + j * 2 + 1] = HEX_ARRAY[v & 0x0F];
+		}
 	}
 
 	public boolean isChecksumValid() {
@@ -260,11 +308,12 @@ public class HexFileLine {
 	}
 
 	/**
-	 * Updates existing bytes of the line starting at the full address 'startAddress'.
+	 * Updates existing bytes of the line starting at the full address
+	 * 'startAddress'.
 	 * 
 	 * @param startAddress full start address where the data should be written to.
-	 * @param offset Offset which need to be applied to the indexes of bs
-	 * @param bs Data which is written to the line
+	 * @param offset       Offset which need to be applied to the indexes of bs
+	 * @param bs           Data which is written to the line
 	 * @return
 	 */
 	public int updateBytes(long startAddress, int offset, byte[] bs) {
@@ -281,11 +330,12 @@ public class HexFileLine {
 	}
 
 	/**
-	 * Extends the line by extensionSize in length and writes bytes of bs to the newly created bytes.
+	 * Extends the line by extensionSize in length and writes bytes of bs to the
+	 * newly created bytes.
 	 * 
 	 * @param extensionSize Number of bytes the line shall be extended by.
-	 * @param bs THe data which is written to the end of the line.
-	 * @param offset The offset applied to the indexes of bs
+	 * @param bs            THe data which is written to the end of the line.
+	 * @param offset        The offset applied to the indexes of bs
 	 */
 	public void extendLine(int extensionSize, byte[] bs, int offset) {
 		byte[] newData = new byte[this.data.length + extensionSize];
