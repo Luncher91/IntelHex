@@ -346,7 +346,7 @@ public class IntelHexFileTest {
 		long start = System.nanoTime();
 		hf.toHexFileString();
 
-		System.out
-				.println(String.format("Generating String took %.2f milliseconds", (System.nanoTime() - start) / 1000000.0));
+		System.out.println(
+				String.format("Generating String took %.2f milliseconds", (System.nanoTime() - start) / 1000000.0));
 	}
 }

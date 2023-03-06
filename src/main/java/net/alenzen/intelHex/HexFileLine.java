@@ -144,22 +144,6 @@ public class HexFileLine {
 		}
 	}
 
-	// 830-860ms
-	public String toString_() {
-		StringBuilder stBuffer = new StringBuilder(":");
-
-		stBuffer.append(String.format("%02X", length));
-		stBuffer.append(String.format("%04X", address));
-		stBuffer.append(String.format("%02X", type.getOrdinal()));
-		for (byte d : data) {
-			stBuffer.append(String.format("%02X", d));
-		}
-		stBuffer.append(String.format("%02X", checksum));
-
-		return stBuffer.toString();
-	}
-	
-	// 37-45ms
 	public String toString() {
 		char[] line = new char[11 + data.length * 2];
 		int i = 0;
@@ -184,6 +168,7 @@ public class HexFileLine {
 	}
 
 	private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
+
 	private static void shortToHex(char[] string, int stringOffset, short b) {
 		int v = b & 0xFFFF;
 		string[stringOffset] = HEX_ARRAY[v >>> 12];
