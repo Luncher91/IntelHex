@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 
-import net.alenzen.intelHex.IntelHexFile.IParsingError;
-
 public class HexFileLine {
 	public static final int ADDRESS_MAX = 0xFFFF;
 	private long lineNumber;

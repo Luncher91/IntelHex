@@ -51,13 +51,6 @@ public class IntelHexFile implements Iterable<Entry<Long, Byte>> {
 		return parse(new InputStreamReader(s), log);
 	}
 
-	interface IParsingError {
-		public static final IParsingError VOID = (a, b, c) -> {
-		};
-
-		void log(long lineNumber, String line, String message);
-	}
-
 	public static IntelHexFile parse(Reader fileStream, IParsingError log) throws IOException, InvalidFormatException {
 		if (log == null) {
 			log = IParsingError.VOID;

@@ -10,8 +10,6 @@ import java.nio.charset.StandardCharsets;
 
 import org.junit.jupiter.api.Test;
 
-import net.alenzen.intelHex.IntelHexFile.IParsingError;
-
 public class HexFileLineTest {
 	private static final IParsingError FAIL_ON_TRIGGER = (i, line, m) -> fail(i + ": " + m);
 
