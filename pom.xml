@@ -3,7 +3,7 @@
 	<artifactId>intelhex</artifactId>
 	<name>Intel Hex Parser</name>
 	<groupId>net.alenzen.intelHex</groupId>
-	<version>0.0.6-SNAPSHOT-jdk${java.version}</version>
+	<version>0.0.7-SNAPSHOT-jdk${java.version}</version>
 	<packaging>jar</packaging>
 	<description>Library to read and modify Intel Hex Files</description>
 	<url>https://github.com/Luncher91/IntelHex/</url>

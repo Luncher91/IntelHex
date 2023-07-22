@@ -33,6 +33,14 @@ public class IntelHexFile implements Iterable<Entry<Long, Byte>> {
 		this.hexFormat = format;
 	}
 
+	public static IntelHexFile create() {
+		return create(HexFormat.I32HEX);
+	}
+	
+	public static IntelHexFile create(HexFormat format) {
+		return new IntelHexFile(new ArrayList<>(), format);
+	}
+	
 	public static IntelHexFile parse(String filename)
 			throws InvalidFormatException, FileNotFoundException, IOException {
 		return parse(new FileReader(filename), null);
