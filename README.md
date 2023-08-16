@@ -13,7 +13,7 @@ IntelHexFile hexFile = IntelHexFile.parse("helloWorld.hex");
 byte[] data = hexFile.readBytes(0x3218L, 4);
 
 // check if data is defined in hex file
-if (hexFile.isDataDefined(0x6582L)) {
+if (hexFile.isDefined(0x6582L)) {
 	// data has been defined by the given hex file
 }
 ```
