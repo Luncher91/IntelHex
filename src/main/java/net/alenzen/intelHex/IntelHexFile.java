@@ -216,6 +216,11 @@ public class IntelHexFile implements Iterable<Entry<Long, Byte>> {
 		this.index = new HexLineIndex(this);
 	}
 
+	/**
+	 * Finds the first HexFileLine which contains the given address.
+	 * @param address The address to search for
+	 * @return An Optional which is present if the given address has been defined at least once and returns the first occurence within the records.
+	 */
 	public Optional<HexFileLine> findLineByAddress(long address) {
 		return records.stream().filter(l -> l.containsAddress(address)).findFirst();
 	}
@@ -242,7 +247,23 @@ public class IntelHexFile implements Iterable<Entry<Long, Byte>> {
 		}
 	}
 
+	/**
+	 * 
+	 * @deprecated Renamed to {@link #isDefined(long)}
+	 * @param address
+	 * @return
+	 */
 	public boolean isDataDefined(long address) {
+		return isDefined(address);
+	}
+
+	/**
+	 * checks if the data has been defined for the given address
+	 * @see #findLineByAddress(long)
+	 * @param address Address to check
+	 * @return true if the data has been defined for address, false otherwise
+	 */
+	public boolean isDefined(long address) {
 		return findLineByAddress(address).isPresent();
 	}
 
